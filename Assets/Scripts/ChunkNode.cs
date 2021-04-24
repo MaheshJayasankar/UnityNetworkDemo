@@ -1,11 +1,13 @@
 using System;
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UtilityClasses;
 
 public class ChunkNode : MonoBehaviour, INode
 {
-    #region INodeFunctions
+    #region INodeDefinition
     public HashSet<INode> Linked { get; set; }
     public string Name { get; set; }
     public Guid Id { get; set; }
@@ -55,5 +57,84 @@ public class ChunkNode : MonoBehaviour, INode
     }
     #endregion
 
-    
+    public ForestGeneratorData forestGeneratorData;
+    public VillageGeneratorData villageGeneratorData;
+    public int debugForestCount;
+
+    const float chunkSize = 500;
+    // Number of areas inside the chunk. Used for collision detection during generation
+    public List<IArea> Areas { get; set; }
+
+    void Awake()
+    {
+        SetUp("MyChunk");
+        Areas = new List<IArea>();
+        ConstructChunkObjects();
+    }
+
+    void ConstructChunkObjects()
+    {
+        CreateForestCenters(forestGeneratorData, debugForestCount);
+    }
+
+    private List<Vector3> CreateForestCenters(ForestGeneratorData forestGeneratorData, int forestCount)
+    {
+        List<Vector3> forestPositions = new List<Vector3>();
+        // TODO: Generalise spawnpoint bounds
+        float lowerSpawnBoundX = 0 - chunkSize / 2;
+        // When the time comes to add vertical scaling, this will have to change based on a separate vertical bound
+        float lowerSpawnBoundY = 0;
+        float lowerSpawnBoundZ = 0 - chunkSize / 2;
+
+        // TODO: Generalise spawnpoint bounds
+        float upperSpawnBoundX = 0 + chunkSize / 2;
+        // When the time comes to add vertical scaling, this will have to change based on a separate vertical bound
+        float upperSpawnBoundY = 0;
+        float upperSpawnBoundZ = 0 + chunkSize / 2;
+
+        Vector3 lowerBounds = new Vector3(lowerSpawnBoundX, lowerSpawnBoundY, lowerSpawnBoundZ);
+        Vector3 upperBounds = new Vector3(upperSpawnBoundX, upperSpawnBoundY, upperSpawnBoundZ);
+
+        // Loop over each forest, generate a center for it
+        for (int idx = 0; idx < forestCount; idx++)
+        {
+            float newForestRadius = forestGeneratorData.spawnRadius.RandomSample();
+            Vector3 spawnPosition = UtilityFunctions.GetRandomVector3(lowerBounds, upperBounds);
+
+            // Create Temp Area with the above parameters
+            var tempArea = new TempArea(AreaType.circle, newForestRadius,spawnPosition);
+
+            // Check for any collisions
+            if (IsCircularAreaFree(tempArea))
+            {
+                string newForestName = $"{forestGeneratorData.forestName}.{idx}";
+                // Initialize new ForestCenter
+                GameObject newForestObject = new GameObject(name: newForestName);
+                var newForestNode = newForestObject.AddComponent<ForestNode>();
+
+                // Find new tree count
+                int newTreeCount = forestGeneratorData.treeCount.RandomSample();
+
+                newForestNode.SetUp(newForestName);
+                newForestNode.SetUpArea(newForestRadius, spawnPosition);
+                newForestNode.SetUpForest(forestGeneratorData.treePrefab, newTreeCount);
+
+                forestPositions.Add(newForestNode.centerPosition);
+                Areas.Add(newForestNode);
+                AddLink(newForestNode);
+            }
+        }
+        return null;
+    }
+    bool IsCircularAreaFree(IArea targetArea)
+    {
+        List<bool> collisionList = Areas.Select(area => area.IsColliding(targetArea)).ToList();
+        return !collisionList.Contains(true);
+    }
+    private bool IsSpaceFree(Vector3 position)
+    {
+        // List that shows true or false entries depending on whether the position is in collision with an area or not
+        List<bool> collisionList = (List<bool>)Areas.Select(area => area.IsInside(position));
+        return !collisionList.Contains(true);
+    }
 }

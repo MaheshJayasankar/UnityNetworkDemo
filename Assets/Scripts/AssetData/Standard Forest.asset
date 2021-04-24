@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f801c5a47f0ffb4ca166026a453047b, type: 3}
+  m_Name: Standard Forest
+  m_EditorClassIdentifier: 
+  spawnRadius:
+    min: 40
+    max: 60
+  treeCount:
+    min: 100
+    max: 200
+  treeBufferRadius: 0.05
+  forestName: Standard Forest
+  treePrefab: {fileID: 7124045940301370225, guid: f8e02cf0f09af4f408412aae21de0659, type: 3}

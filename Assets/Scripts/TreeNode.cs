@@ -2,25 +2,8 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public interface INode
-{
-    public HashSet<INode> Linked { get; set; }
-    public string Name { get; set; }
-    public Guid Id { get; set; }
-    public void AddLink(INode node);
-    public void RemoveLink(INode node);
-    //TODO: Duplicate Node to be changed to instantiating new gameObject and then adding to it
-    public INode DuplicateNode(bool selfLink);
-}
 
-/*
- * ====================================================
- * EXAMPLE DEFINITION OF AN INODE
- * Replace NewTypeNode with desired Node Type
- * ====================================================
- * 
- * 
-public class NewTypeNode : MonoBehaviour, INode
+public class TreeNode : MonoBehaviour, INode
 {
     #region INodeDefinition
     public HashSet<INode> Linked { get; set; }
@@ -32,6 +15,20 @@ public class NewTypeNode : MonoBehaviour, INode
         Linked = new HashSet<INode>();
         Id = Guid.NewGuid();
     }
+    public TreeNode(string name)
+    {
+        Name = name;
+        Linked = new HashSet<INode>();
+        Id = Guid.NewGuid();
+    }
+
+    public TreeNode(string name, HashSet<INode> linked)
+    {
+        Name = name;
+        Linked = linked;
+        Id = Guid.NewGuid();
+    }
+
     public void AddLink(INode node)
     {
         if (!node.Linked.Contains(this))
@@ -51,7 +48,7 @@ public class NewTypeNode : MonoBehaviour, INode
     public INode DuplicateNode(bool selfLink = false)
     {
         GameObject newObject = Instantiate(gameObject);
-        NewTypeNode newNode = newObject.AddComponent<NewTypeNode>();
+        TreeNode newNode = newObject.AddComponent<TreeNode>();
         newNode.SetUp(name);
         foreach (var link in Linked)
         {
@@ -65,4 +62,3 @@ public class NewTypeNode : MonoBehaviour, INode
     }
     #endregion
 }
- */

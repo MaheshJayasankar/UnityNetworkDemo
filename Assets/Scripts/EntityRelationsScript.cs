@@ -64,9 +64,9 @@ public class EntityRelationsScript : MonoBehaviour
     ForestNode InstantiateForest(Vector3 position, float radius, int treeCount)
     {
         GameObject newForest = Instantiate(villagePrefab, position, Quaternion.identity);
-        ForestNode villageNode = newForest.AddComponent<ForestNode>();
-        villageNode.SetUp(defaultForestName, radius, treeCount);
-        return villageNode;
+        ForestNode forestNode = newForest.AddComponent<ForestNode>();
+        forestNode.SetUp(defaultForestName);
+        return forestNode;
     }
 
     VillageNode RandomCreateVillage()
@@ -75,42 +75,6 @@ public class EntityRelationsScript : MonoBehaviour
         Vector3 upperBound = new Vector3(20, 0, 20);
         return RandomCreateVillage(lowerBound, upperBound);
     }
-    
-    /// <summary>
-    /// Generate a list of Vector3 positions indicating the forest node centers in the current chunk block. 
-    /// Generalise to the current chunk position.
-    /// </summary>
-    /// <param name="forestCount"></param>
-    /// <param name="minRadius"></param>
-    /// <param name="maxRadius"></param>
-    /// <returns></returns>
-    List<Vector3> CreateForestCenters(int forestCount, float minRadius, float maxRadius)
-
-    {
-        // TODO: Generalise spawnpoint bounds
-        float lowerSpawnBoundX = 0 - chunkSize / 2;
-        // When the time comes to add vertical scaling, this will have to change based on a separate vertical bound
-        float lowerSpawnBoundY = 0;
-        float lowerSpawnBoundZ = 0 - chunkSize / 2;
-
-        // TODO: Generalise spawnpoint bounds
-        float upperSpawnBoundX = 0 + chunkSize / 2;
-        // When the time comes to add vertical scaling, this will have to change based on a separate vertical bound
-        float upperSpawnBoundY = 0;
-        float upperSpawnBoundZ = 0 + chunkSize / 2;
-
-        Vector3 lowerBounds = new Vector3(lowerSpawnBoundX, lowerSpawnBoundY, lowerSpawnBoundZ);
-        Vector3 upperBounds = new Vector3(upperSpawnBoundX, upperSpawnBoundY, upperSpawnBoundZ);
-
-        // Loop over each forest, generate a center for it
-        for (int i = 0; i < forestCount; i++)
-        {
-            float newForestRadius = Random.Range(minRadius, maxRadius);
-            UtilityFunctions.GetRandomVector3(lowerBounds, upperBounds);
-        }
-        return null;
-    }
-
 
     VillageNode RandomCreateVillage(Vector3 lowerBound, Vector3 upperBound)
     {
