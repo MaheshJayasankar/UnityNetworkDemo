@@ -11,6 +11,7 @@ public interface INode
     public void RemoveLink(INode node);
     //TODO: Duplicate Node to be changed to instantiating new gameObject and then adding to it
     public INode DuplicateNode(bool selfLink);
+    public void SetUp(string name);
 }
 
 /*

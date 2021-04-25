@@ -60,6 +60,7 @@ public class ChunkNode : MonoBehaviour, INode
     public ForestGeneratorData forestGeneratorData;
     public VillageGeneratorData villageGeneratorData;
     public int debugForestCount;
+    public int debugVillageCount;
 
     const float chunkSize = 500;
     // Number of areas inside the chunk. Used for collision detection during generation
@@ -74,6 +75,7 @@ public class ChunkNode : MonoBehaviour, INode
 
     void ConstructChunkObjects()
     {
+        CreateVillageCenters(villageGeneratorData, debugVillageCount);
         CreateForestCenters(forestGeneratorData, debugForestCount);
     }
 
@@ -124,8 +126,73 @@ public class ChunkNode : MonoBehaviour, INode
                 AddLink(newForestNode);
             }
         }
-        return null;
+        return forestPositions;
     }
+    
+    private List<Vector3> CreateVillageCenters(VillageGeneratorData villageGeneratorData, int villageCount)
+    {
+        List<Vector3> villagePositions = new List<Vector3>();
+        // TODO: Generalise spawnpoint bounds
+        float lowerSpawnBoundX = 0 - chunkSize / 2;
+        // When the time comes to add vertical scaling, this will have to change based on a separate vertical bound
+        float lowerSpawnBoundY = 0;
+        float lowerSpawnBoundZ = 0 - chunkSize / 2;
+
+        // TODO: Generalise spawnpoint bounds
+        float upperSpawnBoundX = 0 + chunkSize / 2;
+        // When the time comes to add vertical scaling, this will have to change based on a separate vertical bound
+        float upperSpawnBoundY = 0;
+        float upperSpawnBoundZ = 0 + chunkSize / 2;
+
+        Vector3 lowerBounds = new Vector3(lowerSpawnBoundX, lowerSpawnBoundY, lowerSpawnBoundZ);
+        Vector3 upperBounds = new Vector3(upperSpawnBoundX, upperSpawnBoundY, upperSpawnBoundZ);
+
+        // Loop over each village, generate a center for it
+        for (int idx = 0; idx < villageCount; idx++)
+        {
+            float newVillageRadius = villageGeneratorData.spawnRadius.RandomSample();
+            Vector3 spawnPosition = UtilityFunctions.GetRandomVector3(lowerBounds, upperBounds);
+
+            // Create Temp Area with the above parameters
+            var tempArea = new TempArea(AreaType.circle, newVillageRadius, spawnPosition);
+
+            // Check for any collisions
+            if (IsCircularAreaFree(tempArea))
+            {
+                string newVillageName = $"{villageGeneratorData.villageName}.{idx}";
+                // Initialize new Village Center
+                GameObject newVillageObject = new GameObject(name: newVillageName);
+                var newVillageNode = newVillageObject.AddComponent<VillageNode>();
+
+                // Find new head count
+                int newVillagerCount = villageGeneratorData.headCount.RandomSample();
+
+                newVillageNode.SetUp(newVillageName);
+                newVillageNode.SetUpArea(newVillageRadius, spawnPosition);
+
+                var newVillageData = new VillageData
+                {
+                    headCount = newVillagerCount,
+                    // huts will be grown as per necessity in the VillageNode script
+                    hutCount = 0,
+                    hutSpawnRange = villageGeneratorData.percentageHutSpawnRadius * (newVillageRadius / 100),
+
+                    villagersPerHut = villageGeneratorData.villagersPerHut,
+                    villagerPrefab = villageGeneratorData.villagerPrefab,
+                    elderHutPrefab = villageGeneratorData.elderHutPrefab,
+                    hutPrefab = villageGeneratorData.hutPrefab
+                };
+
+                newVillageNode.SetUpVillage(newVillageData);
+
+                villagePositions.Add(newVillageNode.centerPosition);
+                Areas.Add(newVillageNode);
+                AddLink(newVillageNode);
+            }
+        }
+        return villagePositions;
+    }
+
     bool IsCircularAreaFree(IArea targetArea)
     {
         List<bool> collisionList = Areas.Select(area => area.IsColliding(targetArea)).ToList();

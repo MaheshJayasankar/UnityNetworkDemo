@@ -49,7 +49,7 @@ public class EntityRelationsScript : MonoBehaviour
     {
         GameObject newVillage = Instantiate(villagePrefab, position, Quaternion.identity);
         VillageNode villageNode = newVillage.AddComponent<VillageNode>();
-        villageNode.SetUp(defaultVillageName, villageRadius);
+        villageNode.SetUp(defaultVillageName);
         return villageNode;
     }
 

@@ -98,7 +98,7 @@ public class ForestNode : MonoBehaviour, INode, IArea
     public GameObject TreePrefab { get; set; }
     public int TreeCount { get; set; }
     public List<TreeNode> Trees { get; set; }
-    // public List<TreeNode> Trees { get; set; }
+
     /// <summary>
     /// Function should be called upon creation. Sets up internal parameters, and then grows the trees
     /// </summary>
@@ -125,8 +125,10 @@ public class ForestNode : MonoBehaviour, INode, IArea
     }
     TreeNode CreateTree(string treeName, Vector3 position)
     {
-        GameObject newVillager = Instantiate(TreePrefab, position, Quaternion.identity);
-        TreeNode treeNode = newVillager.AddComponent<TreeNode>();
+        GameObject newTree = Instantiate(TreePrefab, position, Quaternion.identity);
+        UtilityFunctions.PutObjectOnGround(newTree.transform);
+
+        TreeNode treeNode = newTree.AddComponent<TreeNode>();
         treeNode.SetUp(treeName);
         treeNode.transform.parent = transform;
         return treeNode;

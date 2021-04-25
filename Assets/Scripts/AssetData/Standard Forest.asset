@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Standard Forest
   m_EditorClassIdentifier: 
   spawnRadius:
-    min: 40
-    max: 60
+    min: 25
+    max: 75
   treeCount:
     min: 100
     max: 200

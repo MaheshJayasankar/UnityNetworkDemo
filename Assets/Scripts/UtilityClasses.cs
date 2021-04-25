@@ -20,6 +20,7 @@ namespace UtilityClasses
         {
             return Random.Range(min, max);
         }
+        public static MinMaxRangeFloat operator *(MinMaxRangeFloat a, float b) => new MinMaxRangeFloat(a.min * b, a.max * b);
     }
     [System.Serializable]
     public struct MinMaxRangeInt
@@ -36,6 +37,7 @@ namespace UtilityClasses
         {
             return Random.Range(min, max);
         }
+        public static MinMaxRangeInt operator *(MinMaxRangeInt a, int b) => new MinMaxRangeInt(a.min * b, a.max * b);
     }
     /// <summary>
     /// Utility Functions for procedural generation
@@ -74,7 +76,20 @@ namespace UtilityClasses
             Vector3 zeroAngleVector = Vector3.right;
             Vector3 rotationAxis = Vector3.up;
 
-            float radial_length = new MinMaxRangeFloat(0, radius).RandomSample();
+            float radial_length = Mathf.Sqrt(new MinMaxRangeFloat(0, radius * radius).RandomSample());
+            float angle = new MinMaxRangeFloat(0, 360).RandomSample();
+            Vector3 angleVec = Quaternion.AngleAxis(angle, rotationAxis) * zeroAngleVector;
+
+            Vector3 newVector3 = center + (angleVec * radial_length);
+            return newVector3;
+        }
+        public static Vector3 GetRandomVector3(Vector3 center, MinMaxRangeFloat radiusRange)
+        {
+            Vector3 zeroAngleVector = Vector3.right;
+            Vector3 rotationAxis = Vector3.up;
+
+
+            float radial_length = Mathf.Sqrt(new MinMaxRangeFloat(Mathf.Pow(radiusRange.min,2), Mathf.Pow(radiusRange.max,2)).RandomSample());
             float angle = new MinMaxRangeFloat(0, 360).RandomSample();
             Vector3 angleVec = Quaternion.AngleAxis(angle, rotationAxis) * zeroAngleVector;
 
@@ -85,7 +100,8 @@ namespace UtilityClasses
         {
             LayerMask mask = 0;
             mask |= (1 << 3);
-            float verticalOffset = 2f;
+            // Vertical offset can be used in case collision errors show up
+            float verticalOffset = 0f;
 
             // raycast to find the y-position of the masked collider at the transforms x/z
             // note that the ray starts at 100 units
