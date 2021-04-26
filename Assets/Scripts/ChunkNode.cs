@@ -107,6 +107,19 @@ public class ChunkNode : MonoBehaviour, INode
             var tempArea = new TempArea(AreaType.circle, newForestRadius,spawnPosition);
 
             // Check for any collisions
+            bool isFreeArea = IsCircularAreaFree(tempArea);
+            // One extra chance: If area is not free, generate a new area with half the min-max radius range
+            if (!isFreeArea)
+            {
+                // very hacky way to reduce min-max range to half the possible maximum range, retaining same minimum
+                newForestRadius = (forestGeneratorData.spawnRadius + (-forestGeneratorData.spawnRadius.min) * 0.5f + forestGeneratorData.spawnRadius.min).RandomSample();
+                spawnPosition = UtilityFunctions.GetRandomVector3(lowerBounds, upperBounds);
+
+                // Create Temp Area with the above parameters
+                tempArea = new TempArea(AreaType.circle, newForestRadius, spawnPosition);
+            }
+
+            // Check for any collisions
             if (IsCircularAreaFree(tempArea))
             {
                 string newForestName = $"{forestGeneratorData.forestName}.{idx}";
@@ -121,7 +134,7 @@ public class ChunkNode : MonoBehaviour, INode
                 newForestNode.SetUpArea(newForestRadius, spawnPosition);
                 newForestNode.SetUpForest(forestGeneratorData.treePrefab, newTreeCount);
 
-                forestPositions.Add(newForestNode.centerPosition);
+                forestPositions.Add(newForestNode.CenterPosition);
                 Areas.Add(newForestNode);
                 AddLink(newForestNode);
             }
@@ -185,7 +198,7 @@ public class ChunkNode : MonoBehaviour, INode
 
                 newVillageNode.SetUpVillage(newVillageData);
 
-                villagePositions.Add(newVillageNode.centerPosition);
+                villagePositions.Add(newVillageNode.CenterPosition);
                 Areas.Add(newVillageNode);
                 AddLink(newVillageNode);
             }

@@ -70,7 +70,7 @@ public class ForestNode : MonoBehaviour, INode, IArea
         MaxRadius = forestRadius;
         transform.position = position;
     }
-    public Vector3 centerPosition
+    public Vector3 CenterPosition
     {
         get 
         {
@@ -79,14 +79,14 @@ public class ForestNode : MonoBehaviour, INode, IArea
     }
     public bool IsInside(Vector3 position)
     {
-        bool isInside = (position - centerPosition).sqrMagnitude <= MaxRadius * MaxRadius;
+        bool isInside = (position - CenterPosition).sqrMagnitude <= MaxRadius * MaxRadius;
         return isInside;
     }
     public bool IsColliding(IArea targetArea)
     {
         if (targetArea.AreaType == AreaType.circle)
         {
-            float interCenterDistSquared = (targetArea.centerPosition - centerPosition).sqrMagnitude;
+            float interCenterDistSquared = (targetArea.CenterPosition - CenterPosition).sqrMagnitude;
             return interCenterDistSquared
                    <= Mathf.Pow(MaxRadius + targetArea.MaxRadius, 2);
         }
@@ -117,7 +117,7 @@ public class ForestNode : MonoBehaviour, INode, IArea
         for (int i = 0; i < TreeCount; i++)
         {
             string newTreeName = $"{Name}.{defaultTreeName}.{i}";
-            Vector3 newTreePos = UtilityFunctions.GetRandomVector3(centerPosition, MaxRadius);
+            Vector3 newTreePos = UtilityFunctions.GetRandomVector3(CenterPosition, MaxRadius);
             TreeNode newTreeNode = CreateTree(newTreeName, newTreePos);
             Trees.Add(newTreeNode);
             AddLink(newTreeNode);

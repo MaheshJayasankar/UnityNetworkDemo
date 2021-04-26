@@ -8,7 +8,7 @@ public interface IArea
     public bool IsInside(Vector3 position);
     public bool IsColliding(IArea targetArea);
     public float MaxRadius { get; set; }
-    public Vector3 centerPosition { get;}
+    public Vector3 CenterPosition { get;}
 }
 
 
@@ -33,11 +33,11 @@ public class TempArea: IArea
         return false;
     }
     public float MaxRadius { get; set; }
-    public Vector3 centerPosition { get; private set; }
+    public Vector3 CenterPosition { get; private set; }
     public TempArea(AreaType areaType, float maxRadius, Vector3 position)
     {
         AreaType = areaType;
         MaxRadius = maxRadius;
-        centerPosition = position;
+        CenterPosition = position;
     }
 }
