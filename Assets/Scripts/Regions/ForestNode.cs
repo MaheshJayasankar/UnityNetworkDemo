@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UtilityClasses;
 
-public class ForestNode : MonoBehaviour, INode, IArea
+public class ForestNode : MonoBehaviour, INode, IRegion
 {
     #region INodeDefinition
     public HashSet<INode> Linked { get; set; }
@@ -62,13 +62,15 @@ public class ForestNode : MonoBehaviour, INode, IArea
         return newNode;
     }
     #endregion
-    #region IAreaDefinition
-    public AreaType AreaType { get; set; }
+    #region IRegionDefinition
+    public RegionLabel RegionLabel { get; set; }
+    public RegionType RegionType { get; set; }
     public float MaxRadius { get; set; }
-    public void SetUpArea(float forestRadius, Vector3 position)
+    public void SetUpRegion(float forestRadius, Vector3 position)
     {
         MaxRadius = forestRadius;
         transform.position = position;
+        RegionLabel = RegionLabel.forest;
     }
     public Vector3 CenterPosition
     {
@@ -82,13 +84,13 @@ public class ForestNode : MonoBehaviour, INode, IArea
         bool isInside = (position - CenterPosition).sqrMagnitude <= MaxRadius * MaxRadius;
         return isInside;
     }
-    public bool IsColliding(IArea targetArea)
+    public bool IsColliding(IRegion targetRegion)
     {
-        if (targetArea.AreaType == AreaType.circle)
+        if (targetRegion.RegionType == RegionType.circle)
         {
-            float interCenterDistSquared = (targetArea.CenterPosition - CenterPosition).sqrMagnitude;
+            float interCenterDistSquared = (targetRegion.CenterPosition - CenterPosition).sqrMagnitude;
             return interCenterDistSquared
-                   <= Mathf.Pow(MaxRadius + targetArea.MaxRadius, 2);
+                   <= Mathf.Pow(MaxRadius + targetRegion.MaxRadius, 2);
         }
         return false;
     }

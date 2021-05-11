@@ -451,6 +451,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1169287623}
   - component: {fileID: 1169287624}
+  - component: {fileID: 1169287625}
   m_Layer: 0
   m_Name: CameraController
   m_TagString: Untagged
@@ -493,6 +494,21 @@ MonoBehaviour:
   dampingMultiplierDuringTransition: 0.001
   initialDampingDuration: 2
   cameraControls: {fileID: -944628639613478452, guid: 78e13a4a26d894c4a812170af585bc72, type: 3}
+--- !u!114 &1169287625
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1169287622}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a29af8b34d694c4b8827df0a5c971ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cdTime: 1.5
+  boxTransform: {fileID: 313096246}
+  debugChunk: {fileID: 68192778}
 --- !u!1 &1315955448
 GameObject:
   m_ObjectHideFlags: 0

@@ -64,12 +64,12 @@ public class ChunkNode : MonoBehaviour, INode
 
     const float chunkSize = 500;
     // Number of areas inside the chunk. Used for collision detection during generation
-    public List<IArea> Areas { get; set; }
+    public List<IRegion> Regions { get; set; }
 
     void Awake()
     {
         SetUp("MyChunk");
-        Areas = new List<IArea>();
+        Regions = new List<IRegion>();
         ConstructChunkObjects();
     }
 
@@ -104,23 +104,23 @@ public class ChunkNode : MonoBehaviour, INode
             Vector3 spawnPosition = UtilityFunctions.GetRandomVector3(lowerBounds, upperBounds);
 
             // Create Temp Area with the above parameters
-            var tempArea = new TempArea(AreaType.circle, newForestRadius,spawnPosition);
+            var tempRegion = new TempRegion(RegionType.circle, newForestRadius,spawnPosition);
 
             // Check for any collisions
-            bool isFreeArea = IsCircularAreaFree(tempArea);
-            // One extra chance: If area is not free, generate a new area with half the min-max radius range
-            if (!isFreeArea)
+            bool isFreeRegion = IsCircularRegionFree(tempRegion);
+            // One extra chance: If region is not free, generate a new region with half the min-max radius range
+            if (!isFreeRegion)
             {
                 // very hacky way to reduce min-max range to half the possible maximum range, retaining same minimum
                 newForestRadius = (forestGeneratorData.spawnRadius + (-forestGeneratorData.spawnRadius.min) * 0.5f + forestGeneratorData.spawnRadius.min).RandomSample();
                 spawnPosition = UtilityFunctions.GetRandomVector3(lowerBounds, upperBounds);
 
-                // Create Temp Area with the above parameters
-                tempArea = new TempArea(AreaType.circle, newForestRadius, spawnPosition);
+                // Create Temp Region with the above parameters
+                tempRegion = new TempRegion(RegionType.circle, newForestRadius, spawnPosition);
             }
 
             // Check for any collisions
-            if (IsCircularAreaFree(tempArea))
+            if (IsCircularRegionFree(tempRegion))
             {
                 string newForestName = $"{forestGeneratorData.forestName}.{idx}";
                 // Initialize new ForestCenter
@@ -131,11 +131,11 @@ public class ChunkNode : MonoBehaviour, INode
                 int newTreeCount = forestGeneratorData.treeCount.RandomSample();
 
                 newForestNode.SetUp(newForestName);
-                newForestNode.SetUpArea(newForestRadius, spawnPosition);
+                newForestNode.SetUpRegion(newForestRadius, spawnPosition);
                 newForestNode.SetUpForest(forestGeneratorData.treePrefab, newTreeCount);
 
                 forestPositions.Add(newForestNode.CenterPosition);
-                Areas.Add(newForestNode);
+                Regions.Add(newForestNode);
                 AddLink(newForestNode);
             }
         }
@@ -167,10 +167,10 @@ public class ChunkNode : MonoBehaviour, INode
             Vector3 spawnPosition = UtilityFunctions.GetRandomVector3(lowerBounds, upperBounds);
 
             // Create Temp Area with the above parameters
-            var tempArea = new TempArea(AreaType.circle, newVillageRadius, spawnPosition);
+            var tempArea = new TempRegion(RegionType.circle, newVillageRadius, spawnPosition);
 
             // Check for any collisions
-            if (IsCircularAreaFree(tempArea))
+            if (IsCircularRegionFree(tempArea))
             {
                 string newVillageName = $"{villageGeneratorData.villageName}.{idx}";
                 // Initialize new Village Center
@@ -181,7 +181,7 @@ public class ChunkNode : MonoBehaviour, INode
                 int newVillagerCount = villageGeneratorData.headCount.RandomSample();
 
                 newVillageNode.SetUp(newVillageName);
-                newVillageNode.SetUpArea(newVillageRadius, spawnPosition);
+                newVillageNode.SetUpRegion(newVillageRadius, spawnPosition);
 
                 var newVillageData = new VillageData
                 {
@@ -199,22 +199,58 @@ public class ChunkNode : MonoBehaviour, INode
                 newVillageNode.SetUpVillage(newVillageData);
 
                 villagePositions.Add(newVillageNode.CenterPosition);
-                Areas.Add(newVillageNode);
+                Regions.Add(newVillageNode);
                 AddLink(newVillageNode);
             }
         }
         return villagePositions;
     }
 
-    bool IsCircularAreaFree(IArea targetArea)
+    private bool IsCircularRegionFree(IRegion targetRegion)
     {
-        List<bool> collisionList = Areas.Select(area => area.IsColliding(targetArea)).ToList();
+        List<bool> collisionList = Regions.Select(region => region.IsColliding(targetRegion)).ToList();
         return !collisionList.Contains(true);
     }
-    private bool IsSpaceFree(Vector3 position)
+    public IRegion FindRegionIfAny(Vector3 position)
     {
-        // List that shows true or false entries depending on whether the position is in collision with an area or not
-        List<bool> collisionList = (List<bool>)Areas.Select(area => area.IsInside(position));
-        return !collisionList.Contains(true);
+        // If region not found, will return null
+        return Regions.Find(region => region.IsInside(position));
+    }
+
+    /// <summary>
+    /// Create hut and/or place in tiled interface
+    /// </summary>
+    /// <returns></returns>
+    public void DebugCreateHut(Transform targetTransform, IRegion region)
+    {
+        // Note: Ensure below cast is typesafe
+        VillageNode village = region as VillageNode;
+
+        var targetPosition = targetTransform.position;
+        var targetRotationEuler = targetTransform.rotation.eulerAngles;
+        var targetRotation = Quaternion.Euler(0, targetRotationEuler.y, 0);
+
+        GameObject dummyObj = new GameObject("dummy object");
+        dummyObj.transform.position = targetPosition;
+        dummyObj.transform.rotation = targetRotation;
+        UtilityFunctions.PutObjectOnGround(dummyObj.transform);
+        targetPosition = dummyObj.transform.position;
+
+        Debug.Log($"House construction at {Time.fixedTime}");
+        var collidingArea = village.FindAreaIfWithinAny(targetPosition);
+        Debug.Log($"Is this part of a residence area? {!(collidingArea is null)}");
+        if (collidingArea is null)
+        {
+            // Hut construction can begin
+            village.DebugConstructHut(dummyObj.transform);
+            Debug.Log($"Hut constructed at {targetPosition}");
+        }
+        else
+        {
+            // Snap to nearest available tile
+            village.DebugSnapToAndConstructHut(dummyObj.transform, collidingArea);
+            Debug.Log($"Snapped to new position and Hut constructed at {dummyObj.transform.position}");
+        }
+        Destroy(dummyObj);
     }
 }
