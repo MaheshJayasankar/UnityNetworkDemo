@@ -9,6 +9,8 @@ public interface IRegion
     public bool IsInside(Vector3 position);
     public bool IsColliding(IRegion targetRegion);
     public float MaxRadius { get; set; }
+    public HashSet<TiledArea> TiledAreas { get; set; }
+    public void SetUpRegion(float radius, Vector3 position);
     public Vector3 CenterPosition { get;}
 }
 
@@ -25,7 +27,7 @@ public enum RegionLabel
 }
 
 /// <summary>
-/// Temporary class used for any area type object before generation. After checking for no collisions with this temporary class,
+/// Temporary class used for any region type object before generation. After checking for no collisions with this temporary class,
 /// the true IRegion object is created.
 /// </summary>
 public class TempRegion: IRegion
@@ -41,7 +43,9 @@ public class TempRegion: IRegion
         return false;
     }
     public float MaxRadius { get; set; }
+    public HashSet<TiledArea> TiledAreas { get; set; }
     public Vector3 CenterPosition { get; private set; }
+    public void SetUpRegion(float radius, Vector3 position) { }
     public TempRegion(RegionType regionType, float maxRadius, Vector3 position)
     {
         RegionType = regionType;

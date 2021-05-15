@@ -50,12 +50,13 @@ public class HutNode : MonoBehaviour, INode, IResidence, IArea
     #endregion
     #region IResidenceDefinition
     public List<INode> Residents { get; set; }
-    public Vector3 ResidenceDimensions { get; set; }
-    public void SetUpResidence(List<INode> residents, Vector3 residenceDimensions)
+    public IRegion ParentRegion { get; set; }
+    public void SetUpResidence<T>(T region, List<INode> residents) where T : INode, IRegion
     {
+        ParentRegion = region;
         Residents = new List<INode>();
         AddResidents(residents);
-        ResidenceDimensions = residenceDimensions;
+        AddLink(region);
     }
     public void AddResidents(List<INode> residents)
     {
@@ -74,16 +75,6 @@ public class HutNode : MonoBehaviour, INode, IResidence, IArea
         {
             return transform.position;
         }
-    }
-    public bool IsInsideBounds(Vector3 targetPosition)
-    {
-        MinMaxRangeFloat xBounds = new MinMaxRangeFloat(-ResidenceDimensions.x / 2, ResidenceDimensions.x / 2) + CenterPosition.x;
-        MinMaxRangeFloat yBounds = new MinMaxRangeFloat(-ResidenceDimensions.y / 2, ResidenceDimensions.y / 2) + CenterPosition.y;
-        MinMaxRangeFloat zBounds = new MinMaxRangeFloat(-ResidenceDimensions.z / 2, ResidenceDimensions.z / 2) + CenterPosition.z;
-
-
-
-        return xBounds.Contains(targetPosition.x) && yBounds.Contains(targetPosition.y) && zBounds.Contains(targetPosition.z);
     }
     #endregion
     #region IAreaDefinition

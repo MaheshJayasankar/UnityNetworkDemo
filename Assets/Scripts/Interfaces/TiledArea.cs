@@ -3,7 +3,7 @@ using System.Linq;
 using UnityEngine;
 
 /// <summary>
-/// Tiled Area class used to organize a bunch of areas (like houses) closely bunched together in a tile map type structure
+/// Tiled Area class used to organize a bunch of IAreas (like houses) closely bunched together in a tile map type structure
 /// </summary>
 public class TiledArea
 {
@@ -12,6 +12,10 @@ public class TiledArea
     /// </summary>
     public const float minAreaSize = 0.1f;
     public List<IArea> Areas { get; set; }
+    /// <summary>
+    /// The Minimum Distance kept between two IAreas in the current TiledArea
+    /// </summary>
+    public float SnapPadding { get; private set; }
     public Transform centerTransform;
 
     /// <summary>
@@ -25,23 +29,14 @@ public class TiledArea
             centralArea
         };
         centerTransform = centralArea.ObjectTransform;
+        SnapPadding = 1f;
     }
-
-    /// <summary>
-    /// If the point is inside the tiled area or not
-    /// </summary>
-    /// <param name="position"></param>
-    /// <returns></returns>
-    public bool IsInside(Vector3 position)
-    {
-        List<bool> collisionList = (List<bool>)Areas.Select(area => area.IsInside(position));
-        return !collisionList.Contains(true);
-    }
+    
     public IArea FindCollidingAreaIfAny(IArea candidateArea)
     {
         var candidateCenter = candidateArea.Center;
         // First check if center position is inside any area
-        var centerAreaCollider = FindCollidingAreaIfAny(candidateCenter);
+        IArea centerAreaCollider = FindAreaIfInsideAny(candidateCenter);
         if (!(centerAreaCollider is null))
         {
             return centerAreaCollider;
@@ -57,7 +52,7 @@ public class TiledArea
             var cornerPts = GetFourCorners(candidateCenter, candidateArea.Dimensions, centerTransform);
             foreach (var cornerPt in cornerPts)
             {
-                var cornerCollision = FindCollidingAreaInSubsetIfAny(cornerPt, reducedAreaList);
+                var cornerCollision = FindAreaIfInsideAnySubset(cornerPt, reducedAreaList);
                 if (!(cornerCollision is null))
                 {
                     return cornerCollision;
@@ -81,12 +76,12 @@ public class TiledArea
         }
         
     }
-    public IArea FindCollidingAreaIfAny(Vector3 position)
+    private IArea FindAreaIfInsideAny(Vector3 position)
     {
         return Areas.Find(area => area.IsInside(position));
 
     }
-    public IArea FindCollidingAreaInSubsetIfAny(Vector3 position, List<IArea> subsetAreas)
+    private IArea FindAreaIfInsideAnySubset(Vector3 position, List<IArea> subsetAreas)
     {
         return subsetAreas.Find(area => area.IsInside(position));
     }
@@ -130,7 +125,7 @@ public class TiledArea
     public Vector3 SnapToClosestOpenSpace(IArea candidateArea)
     {
         var candidateCenter = candidateArea.Center;
-        var collidingArea = FindCollidingAreaIfAny(candidateCenter);
+        var collidingArea = FindCollidingAreaIfAny(candidateArea);
         if (collidingArea is null)
         {
             throw new MissingReferenceException(message: $"Unable to find Area to snap from, for candidate area at position {candidateCenter}");
@@ -186,9 +181,9 @@ public class TiledArea
                 collidingAreaSideHalfLength = currentlyActiveArea.Dimensions.z / 2;
                 candidateAreaSideHalfLength = candidateArea.Dimensions.z / 2;
             }
-            Vector3 newTargetCenter = currentlyActiveArea.Center + moveDir * (collidingAreaSideHalfLength + candidateAreaSideHalfLength + 1f);
+            Vector3 newTargetCenter = currentlyActiveArea.Center + moveDir * (collidingAreaSideHalfLength + candidateAreaSideHalfLength + SnapPadding);
             // The new target center has to be checked for any further collisions.
-            var newCollidingArea = FindCollidingAreaIfAny(newTargetCenter + moveDir * minAreaSize);
+            var newCollidingArea = FindAreaIfInsideAny(newTargetCenter + moveDir * minAreaSize);
             if (newCollidingArea is null)
             {
                 return newTargetCenter;
@@ -196,6 +191,10 @@ public class TiledArea
             if (iterCount > maxIter)
             {
                 throw new UnityException(message: $"Snapping could not complete in specified iteration limit starting from {candidateCenter}. Too many objects in tileset?");
+            }
+            if (currentlyActiveArea.Equals(newCollidingArea))
+            {
+                throw new UnityException(message: $"Recursive snapping loop detected at {currentlyActiveArea.Center}. Cannot proceed");
             }
             currentlyActiveArea = newCollidingArea;
         }

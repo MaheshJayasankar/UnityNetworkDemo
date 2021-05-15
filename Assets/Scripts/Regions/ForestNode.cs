@@ -66,11 +66,13 @@ public class ForestNode : MonoBehaviour, INode, IRegion
     public RegionLabel RegionLabel { get; set; }
     public RegionType RegionType { get; set; }
     public float MaxRadius { get; set; }
+    public HashSet<TiledArea> TiledAreas { get; set; }
     public void SetUpRegion(float forestRadius, Vector3 position)
     {
         MaxRadius = forestRadius;
         transform.position = position;
         RegionLabel = RegionLabel.forest;
+        TiledAreas = new HashSet<TiledArea>();
     }
     public Vector3 CenterPosition
     {

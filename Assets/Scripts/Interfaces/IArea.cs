@@ -25,7 +25,10 @@ public class TempArea: IArea
 {
     public AreaType AreaType { get; private set; }
     public Vector3 Dimensions { get; private set; }
-    public Vector3 Center { get; private set; }
+    public Vector3 Center { get {
+            return ObjectTransform.position;
+        }
+    }
     public Transform ObjectTransform { get; private set; }
     public TiledArea TiledArea { get; set; }
     public bool IsInside(Vector3 position)
@@ -66,7 +69,6 @@ public class TempArea: IArea
     public void SetUpArea(Transform objectTransform, Vector3 dimensions)
     {
         ObjectTransform = objectTransform;
-        Center = objectTransform.position;
         Dimensions = dimensions;
         AreaType = AreaType.rect;
     }

@@ -23,9 +23,15 @@ MonoBehaviour:
   villagerPrefab: {fileID: 3603723569384320550, guid: 3c08e6afd9c18f742bc8034892e7a252, type: 3}
   hutPrefab: {fileID: 5673008686002173231, guid: eaec08d5561fe5042822e6344a37d68d, type: 3}
   elderHutPrefab: {fileID: 3648487001964417701, guid: d41a4ab0eeb9ea54282825932d0e76b5, type: 3}
+  hutCount:
+    min: 0
+    max: 12
   villagersPerHut:
     min: 2
     max: 4
   percentageHutSpawnRadius:
     min: 75
     max: 90
+  percentageElderHutSpawnRadius:
+    min: 0
+    max: 10
