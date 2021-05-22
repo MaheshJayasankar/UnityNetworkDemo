@@ -59,6 +59,7 @@ public class ChunkNode : MonoBehaviour, INode
 
     public ForestGeneratorData forestGeneratorData;
     public VillageGeneratorData villageGeneratorData;
+    public VillageGenerator villageGenerator;
     public int debugForestCount;
     public int debugVillageCount;
 
@@ -185,9 +186,8 @@ public class ChunkNode : MonoBehaviour, INode
 
                 var newVillageData = new VillageData
                 {
-                    headCount = newVillagerCount,
+                    HeadCount = newVillagerCount,
                     // huts will be grown as per necessity in the VillageNode script
-                    hutCount = 0,
                     hutSpawnRange = villageGeneratorData.percentageHutSpawnRadius * (newVillageRadius / 100),
 
                     villagersPerHut = villageGeneratorData.villagersPerHut,
@@ -197,7 +197,7 @@ public class ChunkNode : MonoBehaviour, INode
                 };
 
                 newVillageNode.SetUpVillage(newVillageData);
-
+                newVillageNode.BeginGenerationProcess();
                 villagePositions.Add(newVillageNode.CenterPosition);
                 Regions.Add(newVillageNode);
                 AddLink(newVillageNode);
@@ -252,5 +252,19 @@ public class ChunkNode : MonoBehaviour, INode
             Debug.Log($"Snapped to new position and Hut constructed at {dummyObj.transform.position}");
         }
         Destroy(dummyObj);
+    }
+
+    public void DebugCreateVillage(Vector3 targetPosition)
+    {
+        float maxRadius = villageGeneratorData.spawnRadius.RandomSample();
+
+        GameObject dummyObj = new GameObject("dummy object");
+        dummyObj.transform.position = targetPosition;
+        UtilityFunctions.PutObjectOnGround(dummyObj.transform);
+        targetPosition = dummyObj.transform.position;
+        Destroy(dummyObj);
+
+        var newVillage = villageGenerator.GenerateVillage(targetPosition, maxRadius, "DebugVillage");
+        Regions.Add(newVillage);
     }
 }

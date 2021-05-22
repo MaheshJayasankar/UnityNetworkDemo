@@ -80,7 +80,7 @@ public class HutNode : MonoBehaviour, INode, IResidence, IArea
     #region IAreaDefinition
     public AreaType AreaType { get; private set; }
     public Vector3 Dimensions { get; private set; }
-    public Vector3 Center { get; private set; }
+    public Vector3 Center { get { return transform.position; } }
     public Transform ObjectTransform { get { return transform;} }
     public TiledArea TiledArea { get; set; }
     public bool IsInside(Vector3 position)
@@ -118,14 +118,12 @@ public class HutNode : MonoBehaviour, INode, IResidence, IArea
     {
         ObjectTransform.rotation = allignmentTransform.rotation;
     }
-    public void SetUpArea(Transform orientationTransform, Vector3 dimensions, TiledArea parentTiledArea)
+    public void SetUpArea(Transform orientationTransform, Vector3 dimensions)
     {
         ObjectTransform.rotation = orientationTransform.rotation;
         ObjectTransform.position = orientationTransform.position;
-        Center = orientationTransform.position;
         Dimensions = dimensions;
         AreaType = AreaType.rect;
-        TiledArea = parentTiledArea;
     }
     #endregion
 }

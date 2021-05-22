@@ -3,7 +3,9 @@ using System.Linq;
 using UnityEngine;
 
 /// <summary>
-/// Tiled Area class used to organize a bunch of IAreas (like houses) closely bunched together in a tile map type structure
+/// Tiled Area class used to organize a bunch of IAreas (like houses) closely bunched together in a tile map type structure.
+/// Note: Tiled Area should be read-only. That is, Regions should only use this attribute internally.
+/// Externally, only the residences and their functions may be accessed.
 /// </summary>
 public class TiledArea
 {
@@ -19,7 +21,8 @@ public class TiledArea
     public Transform centerTransform;
 
     /// <summary>
-    /// Tiled Area made from a starting area. It will be the center of the area
+    /// Tiled Area made from a starting area. It will be the center of the area.
+    /// Also assigns tiled area to starting area for future reference
     /// </summary>
     /// <param name="centralArea"></param>
     public TiledArea(IArea centralArea)
@@ -28,6 +31,7 @@ public class TiledArea
         {
             centralArea
         };
+        centralArea.TiledArea = this;
         centerTransform = centralArea.ObjectTransform;
         SnapPadding = 1f;
     }
@@ -49,7 +53,7 @@ public class TiledArea
             if (!reducedAreaList.Any())
                 return null;
             // Check if any of the 4 corners of the candidate area collide
-            var cornerPts = GetFourCorners(candidateCenter, candidateArea.Dimensions, centerTransform);
+            var cornerPts = GetFourCorners(candidateCenter, candidateArea.Dimensions);
             foreach (var cornerPt in cornerPts)
             {
                 var cornerCollision = FindAreaIfInsideAnySubset(cornerPt, reducedAreaList);
@@ -62,7 +66,7 @@ public class TiledArea
             // Iterate over all other areas, and their corresponding corner points
             foreach (var otherArea in reducedAreaList)
             {
-                var currentCornerPtSet = GetFourCorners(otherArea.Center, otherArea.Dimensions, centerTransform);
+                var currentCornerPtSet = GetFourCorners(otherArea.Center, otherArea.Dimensions);
 
                 foreach (var cornerPt in currentCornerPtSet)
                 {
@@ -90,20 +94,18 @@ public class TiledArea
     /// </summary>
     /// <param name="centerPosition"></param>
     /// <param name="dimensions"></param>
-    /// <param name="orientation"></param>
+    /// 
     /// <returns></returns>
-    private List<Vector3> GetFourCorners(Vector3 centerPosition, Vector3 dimensions, Transform orientation)
+    private List<Vector3> GetFourCorners(Vector3 centerPosition, Vector3 dimensions)
     {
         float xHalfLength = dimensions.x / 2;
         float zHalfLength = dimensions.z / 2;
 
         Vector3 fwVec = centerTransform.forward;
-        Vector3 bcVec = -fwVec;
         Vector3 rgVec = centerTransform.right;
-        Vector3 lfVec = -rgVec;
 
         Vector3 forwardRight = fwVec * xHalfLength + rgVec * zHalfLength;
-        Vector3 forwardLeft = fwVec * xHalfLength + lfVec * zHalfLength;
+        Vector3 forwardLeft = fwVec * xHalfLength - rgVec * zHalfLength;
 
         Vector3 forwardRightPoint = centerPosition + forwardRight;
         Vector3 forwardLeftPoint = centerPosition + forwardLeft;
@@ -194,15 +196,24 @@ public class TiledArea
             }
             if (currentlyActiveArea.Equals(newCollidingArea))
             {
-                throw new UnityException(message: $"Recursive snapping loop detected at {currentlyActiveArea.Center}. Cannot proceed");
+                throw new UnityException(message: $"Snapping loop detected at {currentlyActiveArea.Center}. Cannot proceed");
             }
             currentlyActiveArea = newCollidingArea;
         }
         return Vector3.zero;
     }
-    public void AddArea(IArea area)
+    /// <summary>
+    /// Creates two-way linkage b/w TiledArea object and IArea object. Also alligns the rotation of the area with the TiledArea by default.
+    /// </summary>
+    /// <param name="area"></param>
+    public void AddArea(IArea area, bool allignArea = true)
     {
         Areas.Add(area);
+        area.TiledArea = this;
+        if (allignArea)
+        {
+            area.AllignAreaWith(centerTransform);
+        }
     }
 }
 

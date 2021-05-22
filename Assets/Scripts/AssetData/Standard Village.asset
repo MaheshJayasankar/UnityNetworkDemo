@@ -18,6 +18,7 @@ MonoBehaviour:
   headCount:
     min: 25
     max: 30
+  elderCount: 1
   villagerNohomoRadius: 0.01
   villageName: Standard Village
   villagerPrefab: {fileID: 3603723569384320550, guid: 3c08e6afd9c18f742bc8034892e7a252, type: 3}

@@ -97,9 +97,10 @@ public class VillageNode : MonoBehaviour, INode, IRegion
     const string defaultElderHutName = "Elder Hut";
     const string defaultHutName = "Hut";
     public VillageData VillageData { get; set; }
-    public List<VillagerNode> Villagers { get; set; }
-    public List<VillagerNode> UnhousedVillagers { get; set; }
-    public List<IResidence> Residences { get; set; }
+    public HashSet<VillagerNode> Villagers { get; set; }
+    public HashSet<VillagerNode> UnhousedVillagers { get; set; }
+    public HashSet<ElderHutNode> ElderHutNodes { get; set; }
+    public HashSet<IResidence> Residences { get; set; }
     public HashSet<IArea> Areas { get; set; }
 
     /// <summary>
@@ -108,13 +109,18 @@ public class VillageNode : MonoBehaviour, INode, IRegion
     /// <param name="prefab"></param>
     public void SetUpVillage(VillageData villageData)
     {
-        Residences = new List<IResidence>();
+        Residences = new HashSet<IResidence>();
         Areas = new HashSet<IArea>();
 
         VillageData = villageData;
+        
+    }
+    public void BeginGenerationProcess()
+    {
         UnhousedVillagers = GenerateVillagers();
         GenerateHuts();
     }
+    #region HutGeneration
     void GenerateHuts()
     {
         GenerateElderHut();
@@ -137,21 +143,20 @@ public class VillageNode : MonoBehaviour, INode, IRegion
         // Orientation of the elder hut will always be towards the center of the village
         Vector3 elderHutForward = transform.position - elderHutPosition;
 
+        Quaternion elderHutRotation = Quaternion.FromToRotation(Vector3.forward, elderHutForward);
+
         // Instantiation
-        var elderHutNode = CreateResidence<ElderHutNode>(VillageData.elderHutPrefab, defaultElderHutName, elderHutPosition);
+        var elderHutNode = CreateResidence<ElderHutNode>(VillageData.elderHutPrefab, elderHutPosition, elderHutRotation, residenceName: defaultElderHutName);
         // Allignment
         elderHutNode.transform.forward = elderHutForward;
 
-        // TODO: Replace with sophisticated initialization
-        var newTiledArea = new TiledArea(elderHutNode);
-
         // Take a single resident. TODO make the resident the Village Elder. Give a separate attribute to this resident
-        var villageElders = new List<VillagerNode>
+        var villageElders = new HashSet<VillagerNode>
         {
-            UnhousedVillagers[UnityEngine.Random.Range(0, UnhousedVillagers.Count - 1)]
+            UnhousedVillagers.ToList()[UnityEngine.Random.Range(0, UnhousedVillagers.Count - 1)]
         };
         elderHutNode.AddResidents(villageElders.Cast<INode>().ToList());
-        elderHutNode.SetUpArea(elderHutNode.transform, elderHutDimensions, newTiledArea);
+        elderHutNode.SetUpArea(elderHutNode.transform, elderHutDimensions);
         // Snap elders to near the hut. Also rename them
         foreach (var elder in villageElders)
         {
@@ -164,7 +169,7 @@ public class VillageNode : MonoBehaviour, INode, IRegion
             elder.gameObject.name = $"{elder.Name}.elder";
         }
 
-        UnhousedVillagers = UnhousedVillagers.Except(villageElders).ToList();
+        UnhousedVillagers.ExceptWith(villageElders);
     }
     void GenerateHut(int numberOfResidents)
     {
@@ -199,35 +204,31 @@ public class VillageNode : MonoBehaviour, INode, IRegion
 
         // Checked for collision with existing hut
 
-        // Instantiation
-        HutNode hutNode = CreateResidence<HutNode>(VillageData.hutPrefab, defaultHutName, hutPosition);
-        Destroy(dummyObj);
+        // Orientation of the hut will be towards village center
+        // But, if adding to an existing TiledArea, use that orientation instead
 
-        Vector3 hutForward;
-
-        // Orientation of the hut will always be towards the center of the village
-        
         if (snappingOccurred)
         {
-            hutNode.AllignAreaWith(newTiledArea.centerTransform);
+            dummyObj.transform.rotation = newTiledArea.centerTransform.rotation;
         }
         else
         {
-            hutForward = transform.position - hutPosition;
-            newTiledArea = new TiledArea(hutNode);
-            TiledAreas.Add(newTiledArea);
+            var hutForward = transform.position - hutPosition;
             // Allignment
-            hutNode.transform.forward = hutForward;
+            dummyObj.transform.forward = hutForward;
         }
 
+        // Instantiation
+        HutNode hutNode = CreateResidence<HutNode>(VillageData.hutPrefab, hutPosition, dummyObj.transform.rotation, parentTiledArea: newTiledArea, residenceName: defaultHutName);
+        Destroy(dummyObj);
 
         // TODO: Replace with sophisticated initialization
 
 
         // Pick a random subset of unhoused residents.
-        var newResidents = RandomTools.RandomSubset(UnhousedVillagers, numberOfResidents);
+        var newResidents = RandomTools.RandomSubset(UnhousedVillagers.ToList(), numberOfResidents);
         hutNode.AddResidents(newResidents.Cast<INode>().ToList());
-        hutNode.SetUpArea(hutNode.transform, hutDimensions, newTiledArea);
+        hutNode.SetUpArea(hutNode.transform, hutDimensions);
         // Snap villagers to near the hut. Also rename them
         foreach (var villager in newResidents)
         {
@@ -242,22 +243,10 @@ public class VillageNode : MonoBehaviour, INode, IRegion
             villager.gameObject.name = $"{villager.Name}";
         }
 
-        UnhousedVillagers = UnhousedVillagers.Except(newResidents).ToList();
+        UnhousedVillagers.ExceptWith(newResidents);
     }
-
-    List<VillagerNode> GenerateVillagers()
-    {
-        Villagers = new List<VillagerNode>();
-        // Instantiate the villagers
-        for (int i = 0; i < VillageData.headCount; i++)
-        {
-            string newVillagerName = $"{Name}.{defaultVillagerName}.{i}";
-            Vector3 newVillagerPos = UtilityFunctions.GetRandomVector3(CenterPosition, MaxRadius);
-            VillagerNode newVillagerNode = CreateVillager(newVillagerName, newVillagerPos);
-            Villagers.Add(newVillagerNode);
-        }
-        return Villagers;
-    }
+    #endregion
+    #region CollisionChecks
     /// <summary>
     /// Function to check whether target position is part of the current residential area
     /// </summary>
@@ -267,7 +256,6 @@ public class VillageNode : MonoBehaviour, INode, IRegion
     {
         return Areas.ToList().Find(area => area.IsInside(targetPoint));
     }
-
     public IArea FindAreaIfColliding(IArea candidateArea)
     {
         foreach (var tiledArea in TiledAreas)
@@ -280,15 +268,38 @@ public class VillageNode : MonoBehaviour, INode, IRegion
         }
         return null;
     }
-
-    public void ConfigureResidence<T>(List<VillagerNode> newResidents) where T : MonoBehaviour, INode, IResidence
+    #endregion
+    #region ResidenceFunctions
+    public void ConfigureResidence<T>(IEnumerable<VillagerNode> newResidents) where T : MonoBehaviour, INode, IResidence
     {
-        UnhousedVillagers = UnhousedVillagers.Except(newResidents).ToList();
+        UnhousedVillagers.ExceptWith(newResidents);
     }
-
-    public T CreateResidence<T>(GameObject residencePrefab, string residenceName, Vector3 position) where T : MonoBehaviour, INode, IResidence, IArea
+    /// <summary>
+    /// Instantiate Residence Node, with the given parameters. If no TiledArea is specified, a new TiledArea is created and added to the region.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="residencePrefab"></param>
+    /// <param name="position"></param>
+    /// <param name="parentTiledArea"></param>
+    /// <param name="residenceName"></param>
+    /// <returns></returns>
+    public T CreateResidence<T>(GameObject residencePrefab, Vector3 position, TiledArea parentTiledArea = null, string residenceName = "defaultResidence") where T : MonoBehaviour, INode, IResidence, IArea
     {
-        GameObject newResidence = Instantiate(residencePrefab, position, Quaternion.identity);
+        return CreateResidence<T>(residencePrefab, position, Quaternion.identity, parentTiledArea, residenceName);
+    }
+    /// <summary>
+    /// Instantiate Residence Node, with the given parameters. If no TiledArea is specified, a new TiledArea is created and added to the region. Default rotation is identity. See overload including rotation
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="residencePrefab"></param>
+    /// <param name="position"></param>
+    /// <param name="rotation"></param>
+    /// <param name="parentTiledArea"></param>
+    /// <param name="residenceName"></param>
+    /// <returns></returns>
+    public T CreateResidence<T>(GameObject residencePrefab, Vector3 position, Quaternion rotation, TiledArea parentTiledArea = null, string residenceName = "defaultResidence") where T : MonoBehaviour, INode, IResidence, IArea
+    {
+        GameObject newResidence = Instantiate(residencePrefab, position, rotation);
         UtilityFunctions.PutObjectOnGround(newResidence.transform);
 
         T residenceNode = newResidence.AddComponent<T>();
@@ -296,11 +307,39 @@ public class VillageNode : MonoBehaviour, INode, IRegion
         residenceNode.transform.parent = transform;
 
         residenceNode.SetUpResidence(this, new List<INode>());
+        // TODO: Generalise hut dimensions using data of the hut prefab itself
+        residenceNode.SetUpArea(residenceNode.transform, hutDimensions);
         AddLink(residenceNode);
         Residences.Add(residenceNode);
         Areas.Add(residenceNode);
+        VillageData.SetHutCount(VillageData.HutCount + 1);
+        // If tiled area was not provided, then create a new one
+        if (parentTiledArea is null)
+        {
+            var newTiledArea = new TiledArea(residenceNode);
+            TiledAreas.Add(newTiledArea);
+        }
+        else
+        {
+            parentTiledArea.AddArea(residenceNode);
+        }
 
         return residenceNode;
+    }
+    #endregion
+    #region VillagerFunctions
+    HashSet<VillagerNode> GenerateVillagers()
+    {
+        Villagers = new HashSet<VillagerNode>();
+        // Instantiate the villagers
+        for (int i = 0; i < VillageData.HeadCount; i++)
+        {
+            string newVillagerName = $"{Name}.{defaultVillagerName}.{i}";
+            Vector3 newVillagerPos = UtilityFunctions.GetRandomVector3(CenterPosition, MaxRadius);
+            VillagerNode newVillagerNode = CreateVillager(newVillagerName, newVillagerPos);
+            Villagers.Add(newVillagerNode);
+        }
+        return Villagers;
     }
     public VillagerNode CreateVillager(string villagerName, Vector3 position)
     {
@@ -316,22 +355,19 @@ public class VillageNode : MonoBehaviour, INode, IRegion
 
         return villagerNode;
     }
+    #endregion
+    #region DebugFunctions
     public void DebugConstructHut(Transform dummyObjTransform)
     {
         var hutRotation = dummyObjTransform.rotation;
         var hutPosition = dummyObjTransform.position;
 
         // Instantiation
-        HutNode hutNode = CreateResidence<HutNode>(VillageData.hutPrefab, defaultHutName, hutPosition);
-        // Allignment
-        hutNode.transform.rotation = hutRotation;
+        HutNode hutNode = CreateResidence<HutNode>(VillageData.hutPrefab, hutPosition, hutRotation, residenceName: defaultHutName);
 
         // TODO: Replace with sophisticated initialization
-        var newTiledArea = new TiledArea(hutNode);
 
-        hutNode.SetUpArea(hutNode.transform, hutDimensions, newTiledArea);
-
-        TiledAreas.Add(newTiledArea);
+        hutNode.SetUpArea(hutNode.transform, hutDimensions);
     }
     public void DebugSnapToAndConstructHut(Transform dummyObjTransform, IArea collidingArea)
     {
@@ -347,27 +383,38 @@ public class VillageNode : MonoBehaviour, INode, IRegion
         var hutPosition = dummyObjTransform.position;
 
         // Instantiation
-        HutNode hutNode = CreateResidence<HutNode>(VillageData.hutPrefab, defaultHutName, hutPosition);
-        // Allignment
-        hutNode.transform.rotation = hutRotation;
+        HutNode hutNode = CreateResidence<HutNode>(VillageData.hutPrefab, hutPosition, hutRotation, parentTiledArea: tiledArea, residenceName: defaultHutName);
 
         // TODO: Replace with sophisticated initialization
-        hutNode.SetUpArea(hutNode.transform, hutDimensions, tiledArea);
+        hutNode.SetUpArea(hutNode.transform, hutDimensions);
 
         tiledArea.AddArea(hutNode);
     }
+    #endregion
 }
-
+/// <summary>
+/// Class encapsulates commonly accessed Village Statistics. Each VillageNode has an instance of this class to keep track of its own stats.
+/// </summary>
 public class VillageData
 {
-    public int headCount;
+    public int HeadCount { get; set; }
     public int elderCount;
-    public int hutCount;
+    public int HutCount { get; private set; }
+
     public MinMaxRangeInt villagersPerHut;
     public MinMaxRangeFloat hutSpawnRange;
     public MinMaxRangeFloat elderHutSpawnRange;
+    public float maxRadius;
 
     public GameObject villagerPrefab;
     public GameObject hutPrefab;
     public GameObject elderHutPrefab;
+    public VillageData()
+    {
+        HutCount = 0;
+    }
+    public void SetHutCount(int hutCount)
+    {
+        HutCount = hutCount;
+    }
 }

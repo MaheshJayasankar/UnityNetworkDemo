@@ -9,6 +9,9 @@ public interface IRegion
     public bool IsInside(Vector3 position);
     public bool IsColliding(IRegion targetRegion);
     public float MaxRadius { get; set; }
+    /// <summary>
+    /// Even though it is marked as public, should only be used internally
+    /// </summary>
     public HashSet<TiledArea> TiledAreas { get; set; }
     public void SetUpRegion(float radius, Vector3 position);
     public Vector3 CenterPosition { get;}

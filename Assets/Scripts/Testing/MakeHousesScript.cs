@@ -33,6 +33,16 @@ public class MakeHousesScript : MonoBehaviour
                     debugChunk.DebugCreateHut(boxTransform, collision);
                 }
             }
+            if (keyboard.gKey.isPressed)
+            {
+                var targetPosition = boxTransform.position;
+                var collision = debugChunk.FindRegionIfAny(targetPosition);
+                if (collision is null)
+                {
+                    currentCd += cdTime;
+                    debugChunk.DebugCreateVillage(boxTransform.position);
+                }
+            }
         }
         else
         {

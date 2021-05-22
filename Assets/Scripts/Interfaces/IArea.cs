@@ -13,7 +13,7 @@ public interface IArea
     public TiledArea TiledArea { get; set; }
     public bool IsInside(Vector3 position);
     public void AllignAreaWith(Transform allignmentTransform);
-    //public void SetUpArea(Transform objectTransform, Vector3 Dimensions);
+    public void SetUpArea(Transform objectTransform, Vector3 Dimensions);
 }
 
 public enum AreaType
